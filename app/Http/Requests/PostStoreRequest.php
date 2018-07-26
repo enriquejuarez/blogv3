@@ -23,9 +23,19 @@ class PostStoreRequest extends FormRequest
      */
     public function rules()
     {
-        return [
+        $rules = [
             'name' => 'required',
-            'slug' => 'required|unique:tags,slug', //valida todos menos a si mismo
+            'slug' => 'required|unique:posts,slug', //valida todos menos a si mismo
+            'user_id' => 'required|integer',
+            'category_id' => 'required|integer',
+            'tags' => 'required|array',
+            'body' => 'required',
+            'status' => 'required|in:DRAF,PUBLISHED',
         ];
+
+        if($this->get('file'))
+            $rules = array_merge($rules, ['file' => 'mimes:jpg,jpeg,png']);
+
+        return $rules;
     }
 }

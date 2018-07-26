@@ -10,6 +10,7 @@ use App\Http\Requests\PosttoreRequest;
 use App\Http\Requests\TagUpdateRequest;
 use App\Post;
 use App\Tag;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
 
 class PostController extends Controller
@@ -53,11 +54,16 @@ class PostController extends Controller
      */
     public function store(PostStoreRequest $request)
     {
-        //validar
+        $post = Post::create($request->all());
 
-        $Post = Post::create($request->all());
+        //Image
+        if($request->file('file')){
+            $path = Storage::disk('public')->put('image', $request->file('file'));
+            $post->fill(['file' => asset($path)])->save();
+        }
+        $post->tags()->attach($request->get('tags'));
 
-        return redirect()->route('posts.edit', $Post->id)
+        return redirect()->route('posts.edit', $post->id)
             ->with('info', 'Entrada creada con éxito');
     }
 
@@ -85,7 +91,6 @@ class PostController extends Controller
         $post = Post::find($id);
         $categories = Category::orderBy('name', 'ASC')->pluck('name', 'id');
         $tags = Tag::orderBy('name', 'ASC')->get();
-
         return view('admin.posts.edit', compact('post', 'categories', 'tags'));
     }
 
@@ -99,8 +104,16 @@ class PostController extends Controller
     public function update(PostUpdateRequest $request, $id)
     {
         $post = Post::find($id);
-
         $post->fill($request->all())->save();
+
+        //Image
+        if($request->file('file')){
+            $path = Storage::disk('public')->put('image', $request->file('file'));
+            $post->fill(['file' => asset($path)])->save();
+        }
+
+        $post->tags()->sync($request->get('tags'));
+        
         return redirect()->route('posts.edit', $post->id)
             ->with('info', 'Entrada  actualizada con éxito');
     }
